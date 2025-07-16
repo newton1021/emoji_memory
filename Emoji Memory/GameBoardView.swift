@@ -30,14 +30,12 @@ struct GameBoardView: View {
                     let (_ , columns, cardSize) = bestGridLayout(for: cardDeck.deckSize, in: geometry)
                     let gridItems = Array(repeating: GridItem(.flexible()), count: columns)
                     
-//                    GameGrid(cardDeck: cardDeck, columns: columns, geometry: geometry, gridItems: gridItems)
-                    GameGrid(
-                                           cardDeck: cardDeck,
-                                           columns: columns,
-                                           geometry: geometry,
-                                           gridItems: gridItems,
-                                           cardSize: cardSize
-                                       )
+
+                    GameGrid(cardDeck: cardDeck,
+                             columns: columns,
+                             gridItems: gridItems,
+                             cardSize: cardSize
+                    )
                     
                     //Restart button
                     RestartButton{
@@ -219,21 +217,7 @@ struct RestartButton: View {
         .padding()
     }
 }
-struct GameOverSheet: View {
-    let moves: Int
-    let onRestart: () -> Void
-    
-    var body: some View {
-        VStack {
-            Text("Game Over!\nIt took you \(moves) moves.")
-                .font(.largeTitle)
-                .padding()
-                .onTapGesture {
-                    onRestart()
-                }
-        }
-    }
-}
+
 
 
 struct MatchMessageView: View {
@@ -250,82 +234,5 @@ struct MatchMessageView: View {
 }
 
 
-struct GameGrid: View {
-    @ObservedObject var cardDeck: GameModel
-    let columns: Int
-    let geometry: GeometryProxy
-    let gridItems: [GridItem]
-    let cardSize: CGFloat
-
-    var body: some View {
-        ScrollView {
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(
-                        LinearGradient(
-                            colors: [.yellow, .purple],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.black, lineWidth: 3)
-                            .shadow(radius: 5, x: 3, y: 5)
-                    )
-
-                LazyVGrid(columns: gridItems, spacing: 10) {
-                    ForEach(cardDeck.deck.indices, id: \.self) { index in
-                        EmojiCardView(
-                            card: $cardDeck.deck[index],
-                            cardSize: cardSize
-                        )
-                        .onTapGesture {
-                            cardDeck.selectCard(at: index)
-                        }
-                    }
-                }
-                .padding(10)
-            }
-            .padding(.vertical, 10)
-        }
-        .padding(.horizontal, 20)
-    }
-}
 
 
-//struct GameGrid: View {
-//    @ObservedObject var cardDeck: GameModel
-//    let columns: Int
-//    let geometry: GeometryProxy
-//    let gridItems: [GridItem]
-//
-//    var body: some View {
-//        ScrollView {
-//            ZStack {
-//                RoundedRectangle(cornerRadius: 16)
-//                    .fill(LinearGradient(colors: [.yellow, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
-//                    .overlay(
-//                        RoundedRectangle(cornerRadius: 16)
-//                            .stroke(Color.black, lineWidth: 3)
-//                            .shadow(radius: 5, x: 3, y: 5)
-//                    )
-//
-//                LazyVGrid(columns: gridItems, spacing: 10) {
-//                    ForEach(cardDeck.deck.indices, id: \.self) { index in
-//                        EmojiCardView(
-//                            card: $cardDeck.deck[index],
-//                            cardSize: 0.98 * geometry.size.width / CGFloat(columns + 1)
-//                        )
-//                        .onTapGesture {
-//                            cardDeck.selectCard(at: index)
-//                        }
-//                    }
-//                }
-//                .padding(10)
-//            }
-//            .padding(.vertical, 10)
-//        }
-//        .padding(.horizontal, 20)
-//    }
-//}
