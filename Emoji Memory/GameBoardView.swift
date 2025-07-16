@@ -1,0 +1,331 @@
+//
+//  ContentView.swift
+//  Emoji Memory
+//
+//  Created by Geoffrey Flynn on 7/12/25.
+//
+
+import SwiftUI
+
+struct GameBoardView: View {
+    @StateObject private var cardDeck: GameModel = GameModel(deckSize: 12)
+    @State private var cardSize: CGFloat = 100
+    @State private var showMessage: Bool  = false
+    
+    var body: some View {
+        
+        
+        
+        GeometryReader { geometry in
+            ZStack {
+                BackgroundGradient()
+                
+                VStack {
+                    //title text
+                    TitleView()
+                    // Score board
+                    ScoreBoardView(score: cardDeck.score, moves: cardDeck.moves)
+                    
+                    //Game board
+                    let (_ , columns, cardSize) = bestGridLayout(for: cardDeck.deckSize, in: geometry)
+                    let gridItems = Array(repeating: GridItem(.flexible()), count: columns)
+                    
+//                    GameGrid(cardDeck: cardDeck, columns: columns, geometry: geometry, gridItems: gridItems)
+                    GameGrid(
+                                           cardDeck: cardDeck,
+                                           columns: columns,
+                                           geometry: geometry,
+                                           gridItems: gridItems,
+                                           cardSize: cardSize
+                                       )
+                    
+                    //Restart button
+                    RestartButton{
+                        cardDeck.MakeDeck(size: 12)
+                    }
+                    
+                    //Game over sheet
+                    .sheet(isPresented: $cardDeck.isGameOver){
+                        GameOverSheet(moves: cardDeck.moves) {
+                            cardDeck.MakeDeck(size: 12)
+                        }
+                    }
+                }
+                
+                MatchMessageView(message: cardDeck.matchResults.rawValue, visible: showMessage)
+                
+            }
+            
+            .modifier(MatchResultChangeHandler(matchResult: cardDeck.matchResults) {
+                        handleMatchAnimation()
+                    })
+           
+        }
+    }
+    
+    private func handleMatchAnimation() {
+        withAnimation(.easeInOut(duration: 1)) {
+            showMessage = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation {
+                showMessage = false
+            }
+        }
+    }
+    
+    func gridSize(for count: Int) -> (rows: Int, columns: Int) {
+        let root = Int(Double(count).squareRoot())
+        for i in stride(from: root, through: 1, by: -1) {
+            if count % i == 0 {
+                return (rows: 1,columns:  i)
+            }
+        }
+        // Fallback — should never happen for 2n
+        return (rows: count, columns: 1)
+    }
+    
+    func bestGridLayout(for count: Int, in geometry: GeometryProxy) -> (rows: Int, columns: Int, cardSize: CGFloat) {
+        let availableWidth = geometry.size.width
+        let availableHeight = geometry.size.height * 0.7 // Adjust for title/score/buttons
+
+        var bestLayout: (rows: Int, columns: Int, cardSize: CGFloat) = (count, 1, 0)
+
+        for columns in 1...count {
+            let rows = Int(ceil(Double(count) / Double(columns)))
+
+            let cardWidth = 0.9 * availableWidth / CGFloat(columns)
+            let cardHeight = 0.9 * availableHeight / CGFloat(rows)
+            let cardSize = min(cardWidth, cardHeight) * 0.95
+
+            if cardSize > bestLayout.cardSize {
+                bestLayout = (rows, columns, cardSize)
+            }
+        }
+
+        return bestLayout
+    }
+}
+
+#Preview {
+    GameBoardView()
+}
+
+
+
+struct MatchResultChangeHandler: ViewModifier {
+    let matchResult: MatchResult
+    let onChange: () -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 17, *) {
+            return content
+                .onChange(of: matchResult) { _, newValue in
+                    if newValue != .notAMatch {
+                        onChange()
+                    }
+                }
+        } else {
+            return content
+                .onChange(of: matchResult) { newValue in
+                    if newValue != .notAMatch {
+                        onChange()
+                    }
+                }
+        }
+    }
+}
+
+
+struct BackgroundGradient: View {
+    var body: some View {
+        Rectangle() //background color
+            .ignoresSafeArea(edges: .all)
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [ Color(white: 0.5), Color.white, Color.blue],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+    }
+}
+
+struct TitleView: View {
+    var body: some View {
+        Text("Memory Game")
+            .font(.system(size: 44, weight: .bold, design: .serif))
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [
+                        Color.blue,
+                        Color.purple,
+                        Color.red
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .shadow(color: .brown.opacity(0.4), radius: 4, x: 1, y: 2)
+    }
+}
+
+struct ScoreBoardView: View {
+    let score: Int
+    let moves: Int
+    @AppStorage("BestScore") var bestScore: Int = 100
+    var body: some View {
+        
+        HStack {
+            if bestScore < 100 {
+                Text("Best: \(bestScore)")
+                    .font(.title)
+            }
+            
+            Spacer()
+            if #available(iOS 16.0, *) {
+                Text("Moves: \(moves)")
+                    .font(.title)
+                    .foregroundStyle(.indigo)
+                    .bold(true)
+            } else {
+                // Fallback on earlier versions
+                Text("Moves: \(moves)")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.indigo)
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct RestartButton: View {
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text("Restart")
+                .font(.title)
+                .fontWeight(.semibold)
+                .shadow(color: .black, radius: 5, x: 3, y: 3)
+        }
+        .frame(width: 300, height: 50)
+        .background(Color(white: 0.5))
+        .clipShape(Capsule())
+        .foregroundStyle(.green)
+        .shadow(color: .black, radius: 5, x: 3, y: 3)
+        .padding()
+    }
+}
+struct GameOverSheet: View {
+    let moves: Int
+    let onRestart: () -> Void
+    
+    var body: some View {
+        VStack {
+            Text("Game Over!\nIt took you \(moves) moves.")
+                .font(.largeTitle)
+                .padding()
+                .onTapGesture {
+                    onRestart()
+                }
+        }
+    }
+}
+
+
+struct MatchMessageView: View {
+    let message: String
+    let visible: Bool
+    
+    var body: some View {
+        Text(message)
+            .font(.system(size: 60, weight: .bold, design: .rounded))
+            .rotationEffect(.degrees(Double.random(in: -30...30)))
+            .foregroundColor(.white)
+            .opacity(visible ? 1 : 0)
+    }
+}
+
+
+struct GameGrid: View {
+    @ObservedObject var cardDeck: GameModel
+    let columns: Int
+    let geometry: GeometryProxy
+    let gridItems: [GridItem]
+    let cardSize: CGFloat
+
+    var body: some View {
+        ScrollView {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(
+                        LinearGradient(
+                            colors: [.yellow, .purple],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.black, lineWidth: 3)
+                            .shadow(radius: 5, x: 3, y: 5)
+                    )
+
+                LazyVGrid(columns: gridItems, spacing: 10) {
+                    ForEach(cardDeck.deck.indices, id: \.self) { index in
+                        EmojiCardView(
+                            card: $cardDeck.deck[index],
+                            cardSize: cardSize
+                        )
+                        .onTapGesture {
+                            cardDeck.selectCard(at: index)
+                        }
+                    }
+                }
+                .padding(10)
+            }
+            .padding(.vertical, 10)
+        }
+        .padding(.horizontal, 20)
+    }
+}
+
+
+//struct GameGrid: View {
+//    @ObservedObject var cardDeck: GameModel
+//    let columns: Int
+//    let geometry: GeometryProxy
+//    let gridItems: [GridItem]
+//
+//    var body: some View {
+//        ScrollView {
+//            ZStack {
+//                RoundedRectangle(cornerRadius: 16)
+//                    .fill(LinearGradient(colors: [.yellow, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
+//                    .overlay(
+//                        RoundedRectangle(cornerRadius: 16)
+//                            .stroke(Color.black, lineWidth: 3)
+//                            .shadow(radius: 5, x: 3, y: 5)
+//                    )
+//
+//                LazyVGrid(columns: gridItems, spacing: 10) {
+//                    ForEach(cardDeck.deck.indices, id: \.self) { index in
+//                        EmojiCardView(
+//                            card: $cardDeck.deck[index],
+//                            cardSize: 0.98 * geometry.size.width / CGFloat(columns + 1)
+//                        )
+//                        .onTapGesture {
+//                            cardDeck.selectCard(at: index)
+//                        }
+//                    }
+//                }
+//                .padding(10)
+//            }
+//            .padding(.vertical, 10)
+//        }
+//        .padding(.horizontal, 20)
+//    }
+//}
