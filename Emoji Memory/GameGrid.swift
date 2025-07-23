@@ -13,7 +13,7 @@ struct GameGrid: View {
     let gridItems: [GridItem]
     let cardSize: CGFloat
 
-    @State private var dealtIndices: Set<Int> = []
+    var dealtIndices: Set<Int> = []
     
     var body: some View {
         ScrollView {
@@ -57,19 +57,10 @@ struct GameGrid: View {
             .padding(.vertical, 10)
         }
         .padding(.horizontal, 20)
-        .onAppear {
-                   dealCards()
-               }
+        
     }
     
-    private func dealCards() {
-           // Simulate dealing by revealing one card at a time
-           for index in cardDeck.deck.indices {
-               DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.05) {
-                   dealtIndices.insert(index)
-               }
-           }
-       }
+
 }
 
 #Preview {

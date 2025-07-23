@@ -16,7 +16,38 @@ enum MatchResult: String {
     case notAMatch = "Not a match"
 }
 
+struct ScoreRecord: Codable {
+    var score: Int
+    var bestInWeek: Int
+    var bestInMonth: Int = 100
+    var bestToday: Int = 100
+    var date: Date
+}
 
+class ScoreManager: ObservableObject {
+    @Published var bestScore: ScoreRecord {
+        didSet{
+            save()
+        }
+    }
+    
+    init() {
+        if let data = UserDefaults.standard.data(forKey: "BestScore"),
+           let decoded = try? JSONDecoder().decode(ScoreRecord.self, from: data){
+            self.bestScore = decoded
+            }
+        else {
+            self.bestScore = ScoreRecord(score: 100, bestInWeek: 100, bestInMonth: 100, bestToday: 100, date: Date())
+        }
+    }
+    
+    private func save() {
+        if let encoded = try? JSONEncoder().encode(bestScore) {
+            UserDefaults.standard.set(encoded, forKey: "BestScore")
+        }
+    }
+    
+}
 
 class GameModel: ObservableObject {
     
@@ -25,15 +56,27 @@ class GameModel: ObservableObject {
     @Published var score: Int = 0
     @Published var isGameOver: Bool = false
     @Published var moves: Int = 0
+    @Published var bestScore: Int = 0
     @Published var matchResults: MatchResult = .notAMatch
     
-    @AppStorage("BestScore") var bestScore: Int = 100
+    var scoreManager = ScoreManager()
     
     func updateHighScoreIfNeeded() {
-            if moves < bestScore {
-                bestScore = moves
-            }
+        let today = Calendar.current.startOfDay(for: Date())
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
+        let sunday = Calendar.current.date(byAdding: .day, value: -Calendar.current.component(.weekday, from: Date()), to: tomorrow)!
+        let firstOfMonth = Calendar.current.date(byAdding: .day, value: -Calendar.current.component(.day, from: Date()), to: tomorrow)!
+        
+//
+//        var bestScore: Int
+//        var bestToday: Int
+//        var bestInWeek: Int
+//    
+        if scoreManager.bestScore.date < today || moves <  scoreManager.bestScore.bestToday {
+            
+            
         }
+    }
     
     var deckSize: Int {
         return deck.count

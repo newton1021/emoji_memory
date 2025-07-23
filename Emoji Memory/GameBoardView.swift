@@ -11,7 +11,7 @@ struct GameBoardView: View {
     @StateObject private var cardDeck: GameModel = GameModel(deckSize: 12)
     @State private var cardSize: CGFloat = 100
     @State private var showMessage: Bool  = false
-    
+    @State private var dealtIndices: Set<Int>  = []
     var body: some View {
         
         
@@ -24,7 +24,8 @@ struct GameBoardView: View {
                     //title text
                     TitleView()
                     // Score board
-                    ScoreBoardView(score: cardDeck.score, moves: cardDeck.moves)
+                    ScoreBoardView(score: cardDeck.score, moves: cardDeck.moves,
+                                   bestScore: cardDeck.bestScore)
                     
                     //Game board
                     let (_ , columns, cardSize) = bestGridLayout(for: cardDeck.deckSize, in: geometry)
@@ -34,18 +35,22 @@ struct GameBoardView: View {
                     GameGrid(cardDeck: cardDeck,
                              columns: columns,
                              gridItems: gridItems,
-                             cardSize: cardSize
+                             cardSize: cardSize,
+                             dealtIndices: dealtIndices
                     )
                     
                     //Restart button
                     RestartButton{
                         cardDeck.MakeDeck(size: 12)
+                        dealCards()
                     }
                     
                     //Game over sheet
                     .sheet(isPresented: $cardDeck.isGameOver){
                         GameOverSheet(moves: cardDeck.moves) {
+                            
                             cardDeck.MakeDeck(size: 12)
+                            dealCards()
                         }
                     }
                 }
@@ -59,6 +64,9 @@ struct GameBoardView: View {
                     })
            
         }
+        .onAppear {
+                   dealCards()
+               }
     }
     
     private func handleMatchAnimation() {
@@ -69,6 +77,16 @@ struct GameBoardView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             withAnimation {
                 showMessage = false
+            }
+        }
+    }
+    
+    private func dealCards() {
+        // Simulate dealing by revealing one card at a time
+        dealtIndices.removeAll()
+        for index in cardDeck.deck.indices {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.05) {
+                dealtIndices.insert(index)
             }
         }
     }
@@ -172,7 +190,7 @@ struct TitleView: View {
 struct ScoreBoardView: View {
     let score: Int
     let moves: Int
-    @AppStorage("BestScore") var bestScore: Int = 100
+    let bestScore: Int
     var body: some View {
         
         HStack {
