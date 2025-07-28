@@ -40,6 +40,18 @@ struct GameBoardView: View {
                     )
                     
                     //Restart button
+                    Button(action: playSound)
+                    {Text("Hello, World!")
+                            .font(.title)
+                            .foregroundStyle(.white)
+                            .padding(10)
+                            .background(.black)
+                            .buttonStyle(BorderedProminentButtonStyle())
+                    }
+                    
+                    
+                   
+                                     
                     RestartButton{
                         cardDeck.MakeDeck(size: 12)
                         dealCards()
@@ -80,13 +92,23 @@ struct GameBoardView: View {
             }
         }
     }
-    
+    private func playSound(){
+        SoundManager.playsound(named: "Deal card", withExtension: "wav")
+    }
     private func dealCards() {
         // Simulate dealing by revealing one card at a time
         dealtIndices.removeAll()
         for index in cardDeck.deck.indices {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.05) {
-                dealtIndices.insert(index)
+            let delay = Double(index) * 0.1
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    _ = dealtIndices.insert(index)
+                }
+            }
+            
+            // Play sound 0.2s after card appears (or adjust as needed)
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.2) {
+                SoundManager.playsound(named: "Deal card", withExtension: "wav")
             }
         }
     }

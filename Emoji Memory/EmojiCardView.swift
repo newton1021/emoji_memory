@@ -38,6 +38,7 @@ struct EmojiCardView: View {
         
         ZStack {
             if card.isFlipped {
+               
                 if #available(iOS 17.0, *) {
                     baseShape
                         .fill(.green)
