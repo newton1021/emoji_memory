@@ -64,7 +64,7 @@ class GameModel: ObservableObject {
     
     func updateHighScoreIfNeeded() {
         let today = Calendar.current.startOfDay(for: Date())
-//        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
+ //       let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
 //        let sunday = Calendar.current.date(byAdding: .day, value: -Calendar.current.component(.weekday, from: Date()), to: tomorrow)!
 //        let firstOfMonth = Calendar.current.date(byAdding: .day, value: -Calendar.current.component(.day, from: Date()), to: tomorrow)!
         
@@ -74,8 +74,12 @@ class GameModel: ObservableObject {
 //        var bestInWeek: Int
 //    
         if scoreManager.bestScore.date < today || moves <  scoreManager.bestScore.bestToday {
-            
-            
+            if isGameOver {
+                bestScore = score
+                scoreManager.bestScore.bestToday = moves
+                scoreManager.bestScore.date = Date()
+            }
+
         }
     }
     
@@ -170,7 +174,7 @@ class GameModel: ObservableObject {
         switch (cardA, cardB) {
         case (let a, let b) where a == 1 && b == 1:
             return .perfectMatch
-        case (let a, let b) where a == 1 || b == 1:
+        case (let a, let b) where (a == 1 || b == 1) && (a < 3 && b < 3):
             return .luckyMatch
         case (2, 2):
             return .goodMemory

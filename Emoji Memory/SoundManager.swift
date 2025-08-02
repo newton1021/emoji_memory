@@ -11,7 +11,7 @@ import AVFoundation
 class SoundManager {
     static var players: [AVAudioPlayer] = []
     
-    static func playsound(named name: String, withExtension ext: String) {
+    static func playsound(named name: String, withExtension ext: String = "wav", volume: Float = 0.5) {
         guard let url = Bundle.main.url(forResource: name, withExtension: ext) else {
             print("Sound file not found: \(name).\(ext)")
             return
@@ -20,6 +20,7 @@ class SoundManager {
         do {
             let player = try AVAudioPlayer(contentsOf: url)
             players.append(player)
+            player.volume = volume
             player.play()
 
             // Clean up finished players
