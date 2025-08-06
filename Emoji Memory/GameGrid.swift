@@ -40,12 +40,12 @@ struct GameGrid: View {
                         )
                         .rotationEffect(dealtIndices.contains(index) ? .zero : .degrees(180))
                         .opacity(dealtIndices.contains(index) ? 1 : 0)
-                        .offset(y: dealtIndices.contains(index) ? 0 : -300)
+                        .offset(x: dealtIndices.contains(index) ? 0 : 500, y: dealtIndices.contains(index) ? 0 : -500)
                         
-                        .animation(
-                            .easeOut.delay(Double(index) * 0.1),
-                            value: dealtIndices
-                        )
+//                        .animation(
+//                            .easeOut.delay(dealtIndices.contains(index) ? Double(index) * 0.1 : 0.1),
+//                            value: dealtIndices
+//                        )
                         
                         .onTapGesture {
                             cardDeck.selectCard(at: index)
@@ -66,14 +66,30 @@ struct GameGrid: View {
 #Preview {
     let dummyModel = GameModel(deckSize: 12)
     let columns = 4
-
+    
     let gridItems = Array(repeating: GridItem(.flexible()), count: columns)
     let cardSize: CGFloat = 80
-
+    
+    
+    
+    
+    
     GameGrid(
         cardDeck: dummyModel,
         columns: columns,
         gridItems: gridItems,
         cardSize: cardSize
     )
+    
+//    dealCards(dummyModel: dummyModel)
+    
+   
 }
+//func dealCards(dummyModel: GameModel ){
+//    for index in dummyModel.deck.indices {
+//        DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.05) {
+//            dummyModel.dealtIndices.insert(index)
+//            
+//        }
+//    }
+//}

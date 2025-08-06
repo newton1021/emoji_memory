@@ -39,12 +39,38 @@ struct GameBoardView: View {
                              dealtIndices: dealtIndices
                     )
                     
-                    //Restart button
-                    RestartButton{
-                        cardDeck.MakeDeck(size: 12)
-                        dealCards()
-                    }
+//                    //Restart button
+//                    Button(action: playSound)
+//                    {Text("Hello, World!")
+//                            .font(.title)
+//                            .foregroundStyle(.white)
+//                            .padding(10)
+//                            .background(.black)
+//                            .buttonStyle(BorderedProminentButtonStyle())
+//                    }
                     
+                    
+                    HStack{
+                        
+                        RestartButton{
+                            cardDeck.MakeDeck(size: 12)
+                            dealCards()
+                        }
+                        Spacer()
+                        
+                        Button(action: {
+                            print("Settings Tapped")
+                        }) {
+                            Image(systemName: "gear")
+                                .resizable()
+                                .frame(width: 50, height: 50)
+                                .foregroundColor(Color(#colorLiteral(red: 0.1764705926, green: 0.01176470611, blue: 0.5607843399, alpha: 1)))
+                        }
+                        
+                        
+                        .padding(.trailing)
+                    }
+                    .padding(.horizontal,20)
                     //Game over sheet
                     .sheet(isPresented: $cardDeck.isGameOver){
                         GameOverSheet(moves: cardDeck.moves) {
@@ -65,7 +91,8 @@ struct GameBoardView: View {
            
         }
         .onAppear {
-                   dealCards()
+                   //dealCards()
+            print("Starting")
                }
     }
     
@@ -80,13 +107,23 @@ struct GameBoardView: View {
             }
         }
     }
-    
+    private func playSound(){
+        SoundManager.playsound(named: "Deal card", withExtension: "wav")
+    }
     private func dealCards() {
         // Simulate dealing by revealing one card at a time
         dealtIndices.removeAll()
         for index in cardDeck.deck.indices {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.05) {
-                dealtIndices.insert(index)
+            let delay = Double(index) * 0.1
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    _ = dealtIndices.insert(index)
+                }
+            }
+            
+            // Play sound 0.2s after card appears (or adjust as needed)
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.2) {
+                SoundManager.playsound(named: "Deal card", withExtension: "wav",volume: 0.3)
             }
         }
     }
@@ -227,7 +264,7 @@ struct RestartButton: View {
                 .fontWeight(.semibold)
                 .shadow(color: .black, radius: 5, x: 3, y: 3)
         }
-        .frame(width: 300, height: 50)
+        .frame(width: 200, height: 50)
         .background(Color(white: 0.5))
         .clipShape(Capsule())
         .foregroundStyle(.green)

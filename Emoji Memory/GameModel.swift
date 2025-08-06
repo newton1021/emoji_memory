@@ -8,6 +8,7 @@ import SwiftUI
 
 
 enum MatchResult: String {
+    case perfectMatch = "Perfect Match!"
     case luckyMatch = "Lucky Match!"
     case goodMemory = "Good Memory!"
     case thereItIs = "There it is!"
@@ -63,9 +64,9 @@ class GameModel: ObservableObject {
     
     func updateHighScoreIfNeeded() {
         let today = Calendar.current.startOfDay(for: Date())
-        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
-        let sunday = Calendar.current.date(byAdding: .day, value: -Calendar.current.component(.weekday, from: Date()), to: tomorrow)!
-        let firstOfMonth = Calendar.current.date(byAdding: .day, value: -Calendar.current.component(.day, from: Date()), to: tomorrow)!
+ //       let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today)!
+//        let sunday = Calendar.current.date(byAdding: .day, value: -Calendar.current.component(.weekday, from: Date()), to: tomorrow)!
+//        let firstOfMonth = Calendar.current.date(byAdding: .day, value: -Calendar.current.component(.day, from: Date()), to: tomorrow)!
         
 //
 //        var bestScore: Int
@@ -73,8 +74,12 @@ class GameModel: ObservableObject {
 //        var bestInWeek: Int
 //    
         if scoreManager.bestScore.date < today || moves <  scoreManager.bestScore.bestToday {
-            
-            
+            if isGameOver {
+                bestScore = score
+                scoreManager.bestScore.bestToday = moves
+                scoreManager.bestScore.date = Date()
+            }
+
         }
     }
     
@@ -140,7 +145,9 @@ class GameModel: ObservableObject {
         if deck[firstIndex] == deck[secondIndex] {
             deck[firstIndex].isMatched = true
             deck[secondIndex].isMatched = true
-            
+            DispatchQueue.main.async {
+                SoundManager.playsound(named: "match3", withExtension: "wav")
+            }
             matchResults = evaluateMatch(cardA: deck[firstIndex].lookCount, cardB: deck[secondIndex].lookCount)
             
             selectedIndices.removeAll()
@@ -166,14 +173,16 @@ class GameModel: ObservableObject {
     private func evaluateMatch(cardA: Int, cardB: Int) -> MatchResult {
         switch (cardA, cardB) {
         case (let a, let b) where a == 1 && b == 1:
+            return .perfectMatch
+        case (let a, let b) where (a == 1 || b == 1) && (a < 3 && b < 3):
             return .luckyMatch
-        case (1, let b) where b > 1:
+        case (2, 2):
             return .goodMemory
-        case (let a, 1) where a > 1:
+        case (let a, let b) where a < 4 && b < 4:
             return .thereItIs
         case (let a, let b) where a > 4 && b > 4:
             return .thatTookAWhile
-        case (let a, let b) where a > 2 && b > 2:
+        case (let a, let b) where a > 4 || b > 4:
             return .finallyFoundIt
         default:
             return .notAMatch
